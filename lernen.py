@@ -14,6 +14,7 @@ if 'logged_in' not in st.session_state:
 
 app = MultiPage()
 if st.session_state.logged_in == True:
+    app.add_app('Log in', login.app)
     app.add_app('Lerngruppe suchen', search.app)
     app.add_app('Log out', logout.app)
 else:
