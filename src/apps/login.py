@@ -1,5 +1,6 @@
 import streamlit as st
 import sqlite3
+import bcrypt
 
 def app(data):
     class User():
@@ -19,21 +20,24 @@ def app(data):
         c.execute("CREATE TABLE users (username text, password text)")
         conn.commit()
     
-
     st.title('Log in/ Registrieren')
     nutzercount = list(c.execute("SELECT COUNT(*) FROM users"))
-    st.write('Registrierte Nutzer:', nutzercount[-1][0])
-    option = st.selectbox('Log in/ Registrieren', ('Log in', 'Registrieren'))
+    nutzercount = nutzercount[-1][0]
+
+    st.metric(label = 'Registrierte Nutzer', value = nutzercount)
+
+    option = st.selectbox('Bitte auswählen', ('Log in', 'Registrieren'))
 
     if option == 'Log in':
         with st.form('Log in'):
             username = st.text_input('Nutzername')
             password = st.text_input('Passwort', type = 'password')
-            ExistingUser = User(username, password)
+            bpassword = bytes(password, 'utf-8')
+            ExistingUser = User(username, bpassword)
             if st.form_submit_button('Log in'):
-                if list(c.execute("SELECT * FROM users WHERE username = ? AND password = ?", (ExistingUser.username, ExistingUser.password))):
+                ergebnis = list(c.execute("SELECT * FROM users WHERE username = ?", (ExistingUser.username,)))
+                if ergebnis and bcrypt.checkpw(ExistingUser.password, ergebnis[0][1]):
                     st.session_state.logged_in = True
-                    st.write('Du hast dich erfolgreich angemeldet!')
                     st.experimental_rerun()
                 else:
                     st.write('Nutzername oder Passwort flasch!')
@@ -42,8 +46,11 @@ def app(data):
         with st.form('Registrieren'):
             username = st.text_input('Nutzername')
             password = st.text_input('Passwort', type = 'password')
-            NewUser = User(username, password)
+            bpassword = bytes(password, 'utf-8')
+            hpassword = bcrypt.hashpw(bpassword, bcrypt.gensalt())
+            NewUser = User(username, hpassword)
             if st.form_submit_button('Registrieren'):
+                st.session_state.logged_in = False
                 if len(password) < 4:
                     st.write('Dein Passwort muss mindestens 4 Zeichen haben.')
                 else:
@@ -53,9 +60,5 @@ def app(data):
                         c.execute("INSERT INTO users VALUES (?, ?)", (NewUser.username, NewUser.password))
                         conn.commit()
                         st.write('Nutzer erfolgreich angelegt! Du kannst dich jetzt anmelden.')
-
-    #st.subheader('Gesamte Datenbank')
-    #ergebnis = list(c.execute("SELECT * FROM users"))
-    #st.write(ergebnis)
 
     conn.close()
