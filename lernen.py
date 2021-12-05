@@ -1,5 +1,5 @@
 from src.utils.MultiPage import MultiPage
-from src.apps import login, logout, search
+from src.apps import login, logout, search, add
 import streamlit as st
 
 st.set_page_config(
@@ -15,6 +15,7 @@ if 'logged_in' not in st.session_state:
 app = MultiPage()
 if st.session_state.logged_in == True:
     app.add_app('Log in', login.app)
+    app.add_app('Neue Lerngruppe erstellen', add.app)
     app.add_app('Lerngruppe suchen', search.app)
     app.add_app('Log out', logout.app)
 else:

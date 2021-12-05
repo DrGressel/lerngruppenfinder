@@ -1,6 +1,7 @@
 import streamlit as st
 import sqlite3
 import bcrypt
+import datetime
 
 def app(data):
     class User():
@@ -10,20 +11,19 @@ def app(data):
 
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
+        st.session_state.cu = None
 
-    conn = sqlite3.connect('src/user_database.db')
+    conn = sqlite3.connect('src/database.db')
     c = conn.cursor()
 
     try:
         c.execute("SELECT * FROM users")
     except:
-        c.execute("CREATE TABLE users (username text, password text)")
+        c.execute("CREATE TABLE users (time text, username text, password text)")
         conn.commit()
     
     st.title('Log in/ Registrieren')
-    nutzercount = list(c.execute("SELECT COUNT(*) FROM users"))
-    nutzercount = nutzercount[-1][0]
-
+    nutzercount = len(list(c.execute("SELECT * FROM users")))
     st.metric(label = 'Registrierte Nutzer', value = nutzercount)
 
     option = st.selectbox('Bitte auswählen', ('Log in', 'Registrieren'))
@@ -36,8 +36,10 @@ def app(data):
             ExistingUser = User(username, bpassword)
             if st.form_submit_button('Log in'):
                 ergebnis = list(c.execute("SELECT * FROM users WHERE username = ?", (ExistingUser.username,)))
-                if ergebnis and bcrypt.checkpw(ExistingUser.password, ergebnis[0][1]):
+                if ergebnis and bcrypt.checkpw(ExistingUser.password, ergebnis[0][2]):
                     st.session_state.logged_in = True
+                    st.session_state.cu = username
+                    st.write(st.session_state.cu)
                     st.experimental_rerun()
                 else:
                     st.write('Nutzername oder Passwort flasch!')
@@ -57,7 +59,7 @@ def app(data):
                     if list(c.execute("SELECT * FROM users WHERE username = ?", (NewUser.username,))):
                         st.write('Dieser Nutzername ist schon vergeben.')
                     else:
-                        c.execute("INSERT INTO users VALUES (?, ?)", (NewUser.username, NewUser.password))
+                        c.execute("INSERT INTO users VALUES (?, ?, ?)", (datetime.datetime.now(), NewUser.username, NewUser.password))
                         conn.commit()
                         st.write('Nutzer erfolgreich angelegt! Du kannst dich jetzt anmelden.')
 
