@@ -14,7 +14,7 @@ class MultiPage:
         })
 
     def run(self):
-        st.sidebar.subheader('Die Lernplattform')
+        st.sidebar.subheader('Die Lerngruppenplattform')
 
         # get query_params
         query_params = st.experimental_get_query_params()
