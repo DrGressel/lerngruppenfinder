@@ -11,7 +11,9 @@ def app(data):
 
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
-        st.session_state.cu = None
+
+    if 'cu' not in st.session_state:
+        st.session_state.cu = ''
 
     conn = sqlite3.connect('src/database.db')
     c = conn.cursor()
@@ -21,7 +23,7 @@ def app(data):
     except:
         c.execute("CREATE TABLE users (time text, username text, password text)")
         conn.commit()
-    
+
     st.title('Log in/ Registrieren')
     nutzercount = len(list(c.execute("SELECT * FROM users")))
     st.metric(label = 'Registrierte Nutzer', value = nutzercount)
@@ -39,7 +41,6 @@ def app(data):
                 if ergebnis and bcrypt.checkpw(ExistingUser.password, ergebnis[0][2]):
                     st.session_state.logged_in = True
                     st.session_state.cu = username
-                    st.write(st.session_state.cu)
                     st.experimental_rerun()
                 else:
                     st.write('Nutzername oder Passwort flasch!')
@@ -62,5 +63,9 @@ def app(data):
                         c.execute("INSERT INTO users VALUES (?, ?, ?)", (datetime.datetime.now(), NewUser.username, NewUser.password))
                         conn.commit()
                         st.write('Nutzer erfolgreich angelegt! Du kannst dich jetzt anmelden.')
+
+    if st.session_state.cu == 'ADMIN':
+        ergebnis = list(c.execute("SELECT * FROM users"))
+        st.write(ergebnis)
 
     conn.close()
